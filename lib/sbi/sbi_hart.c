@@ -194,8 +194,10 @@ int sbi_hart_pmp_check_addr(struct sbi_scratch *scratch, unsigned long addr,
 		if (!(prot & PMP_A))
 			continue;
 		if (tempaddr <= addr && addr <= tempaddr + size)
-			if (!(prot & attr))
+			if (!(prot & attr)){
+				sbi_printf("SBI_INVALID_ADDR\n");
 				return SBI_INVALID_ADDR;
+			}
 	}
 
 	return SBI_OK;
@@ -225,7 +227,8 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 			continue;
 		pmp_set(pmp_idx++, prot, addr, log2size);
 	}
-
+	/* test PMP */
+	pmp_set(pmp_idx++, PMP_R | PMP_X, 0x80500000, 10);
 	/*
 	 * Default PMP region for allowing S-mode and U-mode access to
 	 * memory not covered by:
@@ -233,7 +236,7 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	 * 2) Platform specific PMP regions
 	 */
 	pmp_set(pmp_idx++, PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
-
+	
 	return 0;
 }
 
