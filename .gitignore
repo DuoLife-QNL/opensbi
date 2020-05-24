@@ -14,3 +14,4 @@ tags
 riscv-test/*.bin
 riscv-test/*.elf
 riscv-test/*.o
+riscv-test/trace-*
