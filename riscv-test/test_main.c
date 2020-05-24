@@ -38,19 +38,24 @@ void exec_mem(unsigned long addr){
 }
 void test_2(){
 	// mem R/W
-	write_mem(0x80200000, 0x111);
+	unsigned long value = 0x12345;
+	sbi_console_putnum(value, 8);
+	write_mem(0x80200000, value);
         sbi_console_putnum(read_mem(0x80200000), 8);
-
-        sbi_console_putchar('\n');
-        sbi_console_puts("start exec\n");
-        // exec_mem(0x80500000);
-        sbi_console_puts("end exec\n");	
-
 	sbi_console_puts("test2 pass");
+}
+void test_3(){
+	// exec mem
+	unsigned long addr = &foo;
+	sbi_console_puts("start exec, exec: ");
+	sbi_console_putnum(addr, 8);
+	sbi_console_putchar('\n');
+        exec_mem(&foo);
+        sbi_console_puts("end exec\n");
 }
 int test_main(){
 	
-	test_2();
+	test_3();
 	wfi();
 	return 0;
 }
