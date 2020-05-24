@@ -1,5 +1,5 @@
-qemupath:= /home/halloween/Documents/Gitee/DuoLife-QNL/qemu/build/riscv64-softmmu/
-opensbipath := /home/halloween/Documents/Github/opensbi/
+qemupath:= ../../my-qemu/build/riscv64-softmmu/
+opensbipath := ../
 
 CC 	:= riscv64-unknown-elf-gcc -mcmodel=medany -O0
 LD	:= riscv64-unknown-elf-ld -T llinker.ld

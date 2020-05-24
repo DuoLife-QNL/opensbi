@@ -30,23 +30,23 @@ void foo(){
 	sbi_console_puts("ex:foo\n");
 }
 
-int test_main(){
-	
-	int (*p)();
-	unsigned long addr = 0x805000000;
+void exec_mem(unsigned long addr){
+	int(*p)();
 	p = addr;
 	p();
-
-	sbi_console_puts("OK");
-	write_mem(0x80300000,0x111);
+}
+void test_2(){
+	
+}
+int test_main(){
+	
+	write_mem(0x80300000, 0x111);
 	sbi_console_putnum(read_mem(0x80300000), 8);
-	sbi_console_puts("test_main:");
-	sbi_console_putnum(&test_main, 8);
+
 	sbi_console_putchar('\n');
-	sbi_console_puts("foo:");
-        sbi_console_putnum(foo, 8);
-	sbi_console_putchar('\n');
-	foo();
+	sbi_console_puts("start exec\n");
+	exec_mem(0x80500000);
+	sbi_console_puts("end exec\n");
 	wfi();
 	return 0;
 }
