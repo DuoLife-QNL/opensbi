@@ -9,3 +9,8 @@ install/
 
 # Development friendly files
 tags
+
+# pmp test
+riscv-test/*.bin
+riscv-test/*.elf
+riscv-test/*.o
