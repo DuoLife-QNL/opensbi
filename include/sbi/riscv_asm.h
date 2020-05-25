@@ -182,6 +182,10 @@ int pmp_set(unsigned int n, unsigned long prot, unsigned long addr,
 int pmp_get(unsigned int n, unsigned long *prot_out, unsigned long *addr_out,
 	    unsigned long *size);
 
+int epmp_set(int rlb, int mmwp, int mml);
+
+int epmp_get(int *rlb, int *mmwp, int *mml);
+
 #endif /* !__ASSEMBLY__ */
 
 #endif
