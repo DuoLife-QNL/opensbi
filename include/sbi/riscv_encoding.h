@@ -279,6 +279,7 @@
 #define CSR_PMPADDR13			0x3bd
 #define CSR_PMPADDR14			0x3be
 #define CSR_PMPADDR15			0x3bf
+#define CSR_MSECCFG			0x390
 #define CSR_TSELECT			0x7a0
 #define CSR_TDATA1			0x7a1
 #define CSR_TDATA2			0x7a2
