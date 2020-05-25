@@ -349,3 +349,33 @@ int pmp_get(unsigned int n, unsigned long *prot_out, unsigned long *addr_out,
 
 	return 0;
 }
+
+int epmp_set(int rlb, int mmwp, int mml)
+{
+	unsigned long mseccfg;
+
+	if ((rlb | mmwp | mml) & ~1)
+		return SBI_EINVAL;
+
+#if __riscv_xlen == 32 || __riscv_xlen == 64
+	mseccfg = rlb << 2 | mmwp << 1 | mml;
+#else
+	mseccfg = -1;
+#endif
+	if (mseccfg < 0)
+		return SBI_ENOTSUPP;
+
+	csr_write(CSR_MSECCFG, mseccfg);
+
+	return 0;
+}
+
+int epmp_get(int *rlb, int *mmwp, int *mml)
+{
+	unsigned long mseccfg = csr_read(CSR_MSECCFG);
+	*rlb = (mseccfg >> 2) & 1;
+	*mmwp = (mseccfg >> 1) & 1;
+	*mml = mseccfg & 1;
+
+	return 0;
+}
