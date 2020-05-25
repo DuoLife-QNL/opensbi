@@ -40,8 +40,8 @@ void test_2(){
 	// mem R/W
 	unsigned long value = 0x12345;
 	sbi_console_putnum(value, 8);
-	write_mem(0x80200000, value);
-        sbi_console_putnum(read_mem(0x80200000), 8);
+	write_mem(0x80300000, value);
+        sbi_console_putnum(read_mem(0x80300000), 8);
 	sbi_console_puts("test2 pass");
 }
 void test_3(){
@@ -55,7 +55,7 @@ void test_3(){
 }
 int test_main(){
 	
-	test_3();
+	test_2();
 	wfi();
 	return 0;
 }
