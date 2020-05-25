@@ -179,6 +179,17 @@ void sbi_hart_pmp_dump(struct sbi_scratch *scratch)
 	}
 }
 
+void sbi_hart_epmp_dump(struct sbi_scratch *scratch)
+{
+	if (!sbi_hart_has_feature(scratch, SBI_HART_HAS_EPMP))
+		return;
+
+	int rlb, mmwp, mml;
+	epmp_get(&rlb, &mmwp, &mml);
+	sbi_printf("ePMP: RLB = %d, MMWP = %d, MML = %d\n",
+				rlb, mmwp, mml);
+}
+
 int sbi_hart_pmp_check_addr(struct sbi_scratch *scratch, unsigned long addr,
 			    unsigned long attr)
 {
@@ -234,6 +245,9 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	 */
 	pmp_set(pmp_idx++, PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
 
+	if (sbi_hart_has_feature(scratch, SBI_HART_HAS_EPMP))
+		epmp_set(0, 0, 0);
+
 	return 0;
 }
 
@@ -282,6 +296,9 @@ static inline char *sbi_hart_feature_id2string(unsigned long feature)
 		break;
 	case SBI_HART_HAS_TIME:
 		fstr = "time";
+		break;
+	case SBI_HART_HAS_EPMP:
+		fstr = "epmp";
 		break;
 	default:
 		break;
@@ -390,6 +407,15 @@ static void hart_detect_features(struct sbi_scratch *scratch)
 		csr_write_allowed(CSR_MCOUNTEREN, (unsigned long)&trap, val);
 		if (!trap.cause)
 			hfeatures->features |= SBI_HART_HAS_MCOUNTEREN;
+	}
+
+	/* Detect if hart supports EPMP(enhanced PMP) feature */
+	trap.cause = 0;
+	val = csr_read_allowed(CSR_MSECCFG, (unsigned long)&trap);
+	if (!trap.cause) {
+		csr_write_allowed(CSR_MSECCFG, (unsigned long)&trap, val);
+		if (!trap.cause)
+			hfeatures->features |= SBI_HART_HAS_EPMP;
 	}
 
 	/* Detect if hart supports time CSR */
