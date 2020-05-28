@@ -227,7 +227,10 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	/* Firmware PMP region to protect OpenSBI firmware */
 	fw_size_log2 = log2roundup(scratch->fw_size);
 	fw_start = scratch->fw_start & ~((1UL << fw_size_log2) - 1UL);
-	pmp_set(pmp_idx++, 0, fw_start, fw_size_log2);
+	//pmp_set(pmp_idx++, 0, fw_start, fw_size_log2);
+
+	// ePMP test
+	pmp_set(pmp_idx++, PMP_L | PMP_R | PMP_W | PMP_X, fw_start, fw_size_log2);
 
 	/* Platform specific PMP regions */
 	count = sbi_platform_pmp_region_count(plat, hartid);
@@ -239,9 +242,9 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 		pmp_set(pmp_idx++, prot, addr, log2size);
 	}
 	/* test PMP */
-	
 	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W, 0x80200000, 20);
-	pmp_set(pmp_idx++, PMP_R | PMP_X 		, 0x80300000, 20);
+	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W | PMP_L, 0x80300000, 20);
+	// pmp_set(pmp_idx++, PMP_R | PMP_X 		, 0x80300000, 20);
 	pmp_set(pmp_idx++, PMP_R 	     | PMP_W, 0x80400000, 20);
 	pmp_set(pmp_idx++,         PMP_X | PMP_W, 0x80500000, 20);
 	pmp_set(pmp_idx++, PMP_R    			, 0x80600000, 20);
@@ -255,12 +258,13 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	 * 1) Firmware PMP region
 	 * 2) Platform specific PMP regions
 	 */
-	pmp_set(pmp_idx++, PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
+	/* if ePMP is set, PMP_L must be 1 to allow M-mode RWX*/
+	pmp_set(pmp_idx++, PMP_L | PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
 
 	if (!sbi_hart_has_feature(scratch, SBI_HART_HAS_EPMP))
 		return 0;
 	
-	epmp_set(0, 0, 0);
+	epmp_set(0, 0, 1);
 	
 	return 0;
 }
