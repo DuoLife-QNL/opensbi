@@ -373,8 +373,8 @@ int epmp_set(int rlb, int mmwp, int mml)
 int epmp_get(int *rlb, int *mmwp, int *mml)
 {
 	unsigned long mseccfg = csr_read(CSR_MSECCFG);
-	*rlb = mseccfg & 4;
-	*mmwp = mseccfg & 2;
+	*rlb = (mseccfg >> 2) & 1;
+	*mmwp = (mseccfg >> 1) & 1;
 	*mml = mseccfg & 1;
 
 	return 0;
