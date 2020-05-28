@@ -85,10 +85,3 @@ int test_main(){
 		sbi_console_puts("test fail\n");
 		return 0;
 	}
-	test_3();
-	test_2();
-	test_1();
-	
-	wfi();
-	return 0;
-}
