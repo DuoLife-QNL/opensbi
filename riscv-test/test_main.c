@@ -14,19 +14,19 @@ unsigned long read_mem(unsigned long addr){
 }
 void write_mem(unsigned long addr, unsigned long val){
 	sbi_console_puts("write mem @");
-        sbi_console_putnum(addr, 8);
+    sbi_console_putnum(addr, 8);
 	sbi_console_puts(" with value ");
-        sbi_console_putnum(val, 8);
+    sbi_console_putnum(val, 8);
 	sbi_console_putchar('\n');
 	*(unsigned long *)addr = val;
 }
 void exec_mem(unsigned long addr){
 	sbi_console_puts("start exec:");
 	sbi_console_putnum(addr, 8);
-        sbi_console_putchar('\n');
-        int(*p)();
-        p = addr;
-        p();
+    sbi_console_putchar('\n');
+    int(*p)();
+    p = addr;
+    p();
  	sbi_console_puts("end exec\n");
 }
 
@@ -68,7 +68,7 @@ void test_2(){
 	// mem R/W
 	unsigned long value = 0x00012345;
 	write_mem(0x80300000, value);
-        sbi_console_putnum(read_mem(0x80300000), 8);
+    sbi_console_putnum(read_mem(0x80300000), 8);
 	
 	sbi_console_puts("\ntest2 pass\n");
 	return 2;

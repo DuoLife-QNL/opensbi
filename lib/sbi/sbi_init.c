@@ -82,6 +82,7 @@ static void sbi_boot_prints(struct sbi_scratch *scratch, u32 hartid)
 
 	sbi_hart_delegation_dump(scratch);
 	sbi_hart_pmp_dump(scratch);
+	
 }
 
 static spinlock_t coldboot_lock = SPIN_LOCK_INITIALIZER;
