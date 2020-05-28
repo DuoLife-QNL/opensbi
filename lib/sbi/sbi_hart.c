@@ -231,12 +231,12 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	
 	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W, 0x80200000, 20);
 	pmp_set(pmp_idx++, PMP_R | PMP_X 		, 0x80300000, 20);
-	// pmp_set(pmp_idx++, PMP_R 	     | PMP_W, 0x80400000, 20);
-	// pmp_set(pmp_idx++,         PMP_X | PMP_W, 0x80500000, 20);
-	// pmp_set(pmp_idx++, PMP_R    			, 0x80600000, 20);
-	// pmp_set(pmp_idx++,         PMP_X  	, 0x80700000, 20);
-	// pmp_set(pmp_idx++,          	   PMP_W, 0x80800000, 20);
-	// pmp_set(pmp_idx++, 0					, 0x80900000, 20);
+	pmp_set(pmp_idx++, PMP_R 	     | PMP_W, 0x80400000, 20);
+	pmp_set(pmp_idx++,         PMP_X | PMP_W, 0x80500000, 20);
+	pmp_set(pmp_idx++, PMP_R    			, 0x80600000, 20);
+	pmp_set(pmp_idx++,         PMP_X  		, 0x80700000, 20);
+	pmp_set(pmp_idx++,          	   PMP_W, 0x80800000, 20);
+	pmp_set(pmp_idx++, 0					, 0x80900000, 20);
 
 	/*
 	 * Default PMP region for allowing S-mode and U-mode access to
@@ -244,7 +244,7 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	 * 1) Firmware PMP region
 	 * 2) Platform specific PMP regions
 	 */
-	pmp_set(pmp_idx++, PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
+	pmp_set(10, PMP_R | PMP_W | PMP_X, 0, __riscv_xlen);
 	
 	return 0;
 }
