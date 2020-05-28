@@ -14,9 +14,5 @@ tags
 riscv-test/*.bin
 riscv-test/*.elf
 riscv-test/*.o
-<<<<<<< HEAD
 riscv-test/trace-*
 
-=======
-riscv-test/trace-*
->>>>>>> edba947e84eff18804c13e2b286f026af0defe29

@@ -1,8 +1,13 @@
 pmpcfg_csr_read
 pmpcfg_csr_write
-pmpaddr_csr_read
-pmpaddr_csr_write
-mseccfg_csr_write
+-pmpaddr_csr_read
+-pmpaddr_csr_write
+-mseccfg_csr_write
 pmp_hart_has_privs_pass_0
 pmp_hart_has_privs_pass_M
 pmp_hart_has_privs_violation
+pmp_hart_has_privs_L_M
+pmp_hart_has_privs_NL_M
+pmp_hart_has_privs_SR_NL_M
+pmp_hart_has_privs_SR_L_M
+

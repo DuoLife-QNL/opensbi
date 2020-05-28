@@ -35,7 +35,7 @@ void exec_mem(unsigned long addr){
 	do {                                              \
 		__asm__ __volatile__("wfi" ::: "memory"); \
 	} while (0)
-int test_1(){
+void test_1(){
 	// csr R/W
 	unsigned long a = read_csr(0x100);
 
@@ -46,10 +46,10 @@ int test_1(){
         a = read_csr(0x100);
         sbi_console_putnum(a, 8);
 	sbi_console_puts("\ntest1 pass\n");
-	return 1;
+	return ;
 }
 int check_no_exception(){
-        int r = read_csr(0x143);
+        unsigned long r = read_csr(0x143);
 	if (r == 0){
 		sbi_console_puts("no exception: stvl:");
 	}else{
@@ -68,20 +68,22 @@ void test_2(){
 	// mem R/W
 	unsigned long value = 0x00012345;
 	write_mem(0x80300000, value);
-    sbi_console_putnum(read_mem(0x80300000), 8);
+    	sbi_console_putnum(read_mem(0x80300000), 8);
 	
 	sbi_console_puts("\ntest2 pass\n");
-	return 2;
+	return;
 }
 void test_3(){
 	// exec mem
 	unsigned long addr = &foo;
         exec_mem(&foo);
-	return 3;
+	return;
 }
 
 int test_main(){
 	if(!check_no_exception()){
-		sbi_console_puts("test fail\n");
 		return 0;
 	}
+	test_2();
+	return 0;
+}

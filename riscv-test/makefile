@@ -24,6 +24,16 @@ qemu:
 	-device loader,file=test.bin,addr=0x80200000 \
 	-kernel $(opensbipath)build/platform/generic/firmware/fw_payload.bin
 
+qemu-gdb:
+	$(qemupath)qemu-system-riscv64 \
+	-machine virt \
+        -nographic \
+	-s \
+	-S \
+	-bios $(opensbipath)build/platform/generic/firmware/fw_jump.bin \
+	-device loader,file=test.bin,addr=0x80200000 \
+	-kernel $(opensbipath)build/platform/generic/firmware/fw_payload.bin
+
 analyze:trace-*
 	$(qemupath)../../scripts/simpletrace.py trace-events trace-*
 
