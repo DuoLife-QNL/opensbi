@@ -311,6 +311,9 @@ static inline char *sbi_hart_feature_id2string(unsigned long feature)
 	case SBI_HART_HAS_TIME:
 		fstr = "time";
 		break;
+	case SBI_HART_HAS_EPMP:
+		fstr = "epmp";
+		break;
 	default:
 		break;
 	}
