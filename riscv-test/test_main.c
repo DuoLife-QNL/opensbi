@@ -7,21 +7,22 @@
 #define write_csr(reg, val) ({ \
   asm volatile ("csrw " #reg ", %0" :: "rK"(val)); })
 unsigned long read_mem(unsigned long addr){
-	sbi_console_puts("read mem @");
+	sbi_console_puts("S/U mode read mem @");
 	sbi_console_putnum(addr, 8);
 	sbi_console_putchar('\n');
 	return *(unsigned long *)addr; 
 }
 void write_mem(unsigned long addr, unsigned long val){
-	sbi_console_puts("write mem @");
+	sbi_console_puts("S/U mode write mem @");
     sbi_console_putnum(addr, 8);
 	sbi_console_puts(" with value ");
     sbi_console_putnum(val, 8);
 	sbi_console_putchar('\n');
 	*(unsigned long *)addr = val;
+	sbi_console_puts("end write");
 }
 void exec_mem(unsigned long addr){
-	sbi_console_puts("start exec:");
+	sbi_console_puts("S/U mode start exec:");
 	sbi_console_putnum(addr, 8);
     sbi_console_putchar('\n');
     int(*p)();
@@ -79,11 +80,20 @@ void test_3(){
         exec_mem(&foo);
 	return;
 }
-
+void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val)
+{
+        sbi_ecall(9, 0, op, addr, val, 0, 0, 0);
+}
 int test_main(){
 	if(!check_no_exception()){
 		return 0;
 	}
-	test_2();
+	sbi_mem_test(0,0x80800000,0);
+	sbi_mem_test(1,0x80800000,0x12345);
+	sbi_mem_test(0,0x80800000,0);
+	
+//	sbi_console_putnum(read_mem(0x80800000),8);
+	write_mem(0x80800000,0x54321);
+	sbi_console_putnum(read_mem(0x80800000),8);
 	return 0;
 }

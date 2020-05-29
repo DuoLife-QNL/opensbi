@@ -1,4 +1,5 @@
 #define SBI_EXT_0_1_CONSOLE_PUTCHAR 0x1
+#define SBI_EXT_0_1_MEM_TEST 0x9
 typedef unsigned long           uintptr_t;
 struct sbiret {
         long error;
@@ -33,7 +34,6 @@ void sbi_console_putchar(int ch)
 {
         sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
 }
-
 void sbi_console_putOK(){
 	sbi_console_putchar('O');
 	sbi_console_putchar('K');
