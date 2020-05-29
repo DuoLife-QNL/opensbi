@@ -40,3 +40,6 @@ libsbi-objs-y += sbi_tlb.o
 libsbi-objs-y += sbi_trap.o
 libsbi-objs-y += sbi_unpriv.o
 libsbi-objs-y += sbi_expected_trap.o
+
+# epmp test
+libsbi-objs-y += sbi_mem_test.o

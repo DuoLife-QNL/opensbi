@@ -22,6 +22,7 @@
 #include <sbi/sbi_trap.h>
 #include <sbi/sbi_unpriv.h>
 #include <sbi/sbi_hart.h>
+#include <sbi/sbi_mem_test.h>
 
 static int sbi_load_hart_mask_unpriv(ulong *pmask, ulong *hmask,
 				     struct sbi_trap_info *uptrap)
@@ -103,15 +104,19 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 	case SBI_EXT_0_1_SHUTDOWN:
 		sbi_system_reset(SBI_PLATFORM_RESET_SHUTDOWN);
 		break;
+	/* epmp test*/
+	case SBI_EXT_0_1_MEM_TEST:
+		sbi_mem_test(args[0],args[1],args[2]);
+		break;
 	default:
 		ret = SBI_ENOTSUPP;
 	};
 
 	return ret;
 }
-
+/*epmp test*/
 struct sbi_ecall_extension ecall_legacy = {
 	.extid_start = SBI_EXT_0_1_SET_TIMER,
-	.extid_end = SBI_EXT_0_1_SHUTDOWN,
+	.extid_end = SBI_EXT_0_1_MEM_TEST,
 	.handle = sbi_ecall_legacy_handler,
 };

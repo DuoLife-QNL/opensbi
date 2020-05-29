@@ -22,6 +22,8 @@
 #define SBI_EXT_0_1_REMOTE_SFENCE_VMA		0x6
 #define SBI_EXT_0_1_REMOTE_SFENCE_VMA_ASID	0x7
 #define SBI_EXT_0_1_SHUTDOWN			0x8
+/* epmp test */
+#define SBI_EXT_0_1_MEM_TEST            0x9
 #define SBI_EXT_BASE				0x10
 #define SBI_EXT_TIME				0x54494D45
 #define SBI_EXT_IPI				0x735049
@@ -69,6 +71,9 @@
 #define SBI_EXT_VENDOR_END			0x09FFFFFF
 #define SBI_EXT_FIRMWARE_START			0x0A000000
 #define SBI_EXT_FIRMWARE_END			0x0AFFFFFF
+
+/* SBI function ePMP test*/
+
 /* clang-format on */
 
 #endif
