@@ -213,7 +213,15 @@ int sbi_hart_pmp_check_addr(struct sbi_scratch *scratch, unsigned long addr,
 
 	return SBI_OK;
 }
-
+void cpy_code(unsigned long addr){
+	char code[] = {0x41,0x11,0x22,0xe4,
+				   0x00,0x08,0x01,0x00,
+				   0x22,0x64,0x41,0x01,
+				   0x82,0x80};
+	for (int i = 0;i< 14;i++){
+		*((char *)addr + i) = code [i];
+	}
+}
 static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 {
 	u32 i, pmp_idx = 0, pmp_count, count;
@@ -229,8 +237,18 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	fw_start = scratch->fw_start & ~((1UL << fw_size_log2) - 1UL);
 	//pmp_set(pmp_idx++, 0, fw_start, fw_size_log2);
 
+	/* ePMP test : before setting PMP, cpy foo function to mem
+	 * void foo(){
+	 * 	  return
+	 * }
+	*/
+	for (int i = 1; i < 16;i++ ){
+		unsigned long addr = 0x80100000 + 0x00100000 * i + 0x000fff00;
+		cpy_code(addr);
+	}
+
 	// ePMP test
-	pmp_set(pmp_idx++, PMP_L | PMP_R | PMP_W | PMP_X, fw_start, fw_size_log2);
+	pmp_set(pmp_idx++, PMP_R | PMP_W | PMP_X | PMP_L , fw_start, fw_size_log2);
 
 	/* Platform specific PMP regions */
 	count = sbi_platform_pmp_region_count(plat, hartid);
@@ -242,15 +260,21 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 		pmp_set(pmp_idx++, prot, addr, log2size);
 	}
 	/* test PMP */
-	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W, 0x80200000, 20);
-	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W | PMP_L, 0x80300000, 20);
-	// pmp_set(pmp_idx++, PMP_R | PMP_X 		, 0x80300000, 20);
-	pmp_set(pmp_idx++, PMP_R 	     | PMP_W, 0x80400000, 20);
-	pmp_set(pmp_idx++,         PMP_X | PMP_W, 0x80500000, 20);
-	pmp_set(pmp_idx++, PMP_R    			, 0x80600000, 20);
-	pmp_set(pmp_idx++,         PMP_X  		, 0x80700000, 20);
-	pmp_set(pmp_idx++,          	   PMP_W, 0x80800000, 20);
-	pmp_set(pmp_idx++, 0					, 0x80900000, 20);
+	pmp_set(pmp_idx++, PMP_R | PMP_X | PMP_W | 0	, 0x80200000, 20);
+	pmp_set(pmp_idx++, PMP_R | 0 	 | 0 	 | PMP_L, 0x80300000, 20);
+	pmp_set(pmp_idx++, PMP_R | 0 	 | 0 	 | 0	, 0x80400000, 20);
+	pmp_set(pmp_idx++, PMP_R | PMP_X | 0	 | PMP_L, 0x80500000, 20);
+	pmp_set(pmp_idx++, PMP_R | PMP_X | 0	 | 0	, 0x80600000, 20);
+	pmp_set(pmp_idx++, PMP_R | 0 	 | PMP_W | PMP_L, 0x80700000, 20);
+	pmp_set(pmp_idx++, PMP_R | 0 	 | PMP_W | 0	, 0x80800000, 20);
+	pmp_set(pmp_idx++, 0	 | 0	 | 0 	 | PMP_L, 0x80900000, 20);
+	pmp_set(pmp_idx++, 0	 | 0	 | 0 	 | 0 	, 0x80a00000, 20);
+	pmp_set(pmp_idx++, 0	 | PMP_X | 0	 | PMP_L, 0x80b00000, 20);
+	pmp_set(pmp_idx++, 0	 | PMP_X | 0	 | 0	, 0x80c00000, 20);
+	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | PMP_L, 0x80d00000, 20);
+	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | 0	, 0x80e00000, 20);
+	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | PMP_L, 0x80f00000, 20);
+	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | 0	, 0x81000000, 20);
 
 	/*
 	 * Default PMP region for allowing S-mode and U-mode access to

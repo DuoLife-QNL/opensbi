@@ -1,42 +1,19 @@
+#define BASE_ADDR 		0x80000000
+#define FOO_FN_OFFSET 	0x000fff00
+#define MEM_READ  		0 
+#define MEM_WRITE 		1
+#define MEM_EXEC  		2
+#define EXEC_FOO  		3
+
 #include "test_main.h"
-#define CSR_PMPCFG0		0x3a0
-#define CSR_PMPADDR0		0x3b0
-#define CSR_STVAL		0x143
-#define read_csr(reg) ({ unsigned long __tmp; \
-  asm volatile ("csrr %0, " #reg : "=r"(__tmp)); __tmp; })
-#define write_csr(reg, val) ({ \
-  asm volatile ("csrw " #reg ", %0" :: "rK"(val)); })
-unsigned long read_mem(unsigned long addr){
-	sbi_console_puts("S/U mode read mem @");
-	sbi_console_putnum(addr, 8);
-	sbi_console_putchar('\n');
-	return *(unsigned long *)addr; 
-}
-void write_mem(unsigned long addr, unsigned long val){
-	sbi_console_puts("S/U mode write mem @");
-    sbi_console_putnum(addr, 8);
-	sbi_console_puts(" with value ");
-    sbi_console_putnum(val, 8);
-	sbi_console_putchar('\n');
-	*(unsigned long *)addr = val;
-	sbi_console_puts("end write");
-}
-void exec_mem(unsigned long addr){
-	sbi_console_puts("S/U mode start exec:");
-	sbi_console_putnum(addr, 8);
-    sbi_console_putchar('\n');
-    int(*p)();
-    p = addr;
-    p();
- 	sbi_console_puts("end exec\n");
-}
-
-
-#define wfi()                                             \
-	do {                                              \
-		__asm__ __volatile__("wfi" ::: "memory"); \
-	} while (0)
-void test_1(){
+#define TEST(x) test_##x()
+#define TESTMR(x) test_m(x,MEM_READ)
+#define TESTMW(x) test_m(x,MEM_WRITE)
+#define TESTMX(x) test_m(x,MEM_EXEC)
+#define TESTSR(x) test_s(x,MEM_READ)
+#define TESTSW(x) test_s(x,MEM_WRITE)
+#define TESTSX(x) test_s(x,MEM_EXEC)
+void test_csr(){
 	// csr R/W
 	unsigned long a = read_csr(0x100);
 
@@ -49,22 +26,13 @@ void test_1(){
 	sbi_console_puts("\ntest1 pass\n");
 	return ;
 }
-int check_no_exception(){
-        unsigned long r = read_csr(0x143);
-	if (r == 0){
-		sbi_console_puts("no exception: stvl:");
-	}else{
-                sbi_console_puts("exception detected!\n");
-        }
-	sbi_console_putnum(r, 8);
-	sbi_console_putchar('\n');
-	return r == 0;
+void test_0(){
+	unsigned long addr = BASE_ADDR + 0x100000 * 0;
+	sbi_mem_test(EXEC_FOO, 0, 0);
+	sbi_mem_test(MEM_READ, addr + 0x1ffe0, 0);
+	sbi_mem_test(MEM_WRITE, addr + 0x1fff8, 0);
+	sbi_console_puts("test 0 pass");
 }
-
-void foo(){
-	sbi_console_puts("ex:foo\n");
-}
-
 void test_2(){
 	// mem R/W
 	unsigned long value = 0x00012345;
@@ -77,23 +45,120 @@ void test_2(){
 void test_3(){
 	// exec mem
 	unsigned long addr = &foo;
-        exec_mem(&foo);
+    exec_mem(&foo);
 	return;
 }
-void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val)
-{
-        sbi_ecall(9, 0, op, addr, val, 0, 0, 0);
-}
-int test_main(){
-	if(!check_no_exception()){
-		return 0;
-	}
+void test_4(){
 	sbi_mem_test(0,0x80800000,0);
 	sbi_mem_test(1,0x80800000,0x12345);
 	sbi_mem_test(0,0x80800000,0);
 	
-//	sbi_console_putnum(read_mem(0x80800000),8);
+	sbi_console_putnum(read_mem(0x80800000),8);
 	write_mem(0x80800000,0x54321);
 	sbi_console_putnum(read_mem(0x80800000),8);
+}
+void test_m(int x, unsigned op){
+	unsigned long addr = BASE_ADDR + 0x100000 * (x + (x!=0));
+	addr += (op == MEM_WRITE) * 0x1fff8UL 
+		 + (op == MEM_EXEC) * FOO_FN_OFFSET;
+	sbi_mem_test(op, addr, 0);
+	sbi_console_puts("test ");
+	sbi_console_putnum(x,1);
+	if (op == MEM_READ){
+		sbi_console_puts("R");
+	}else if (op == MEM_WRITE){
+		sbi_console_puts("W");
+	}else if (op == MEM_EXEC){
+		sbi_console_puts("X");
+	}
+	sbi_console_puts(" pass\n");
+}
+void test_s(int x, unsigned op){
+	unsigned long addr = BASE_ADDR + 0x100000 * (x + (x!=0));
+	if (op == MEM_READ){
+		unsigned long r = read_mem(addr);
+		sbi_console_puts("ret value:");
+		sbi_console_putnum(r, 8);
+		sbi_console_puts("\ntest ");
+		sbi_console_putnum(x,1);
+		sbi_console_puts("R");
+		sbi_console_puts(" pass\n");
+	}else if (op == MEM_WRITE){
+		addr += 0xffff8UL;
+		write_mem(addr, 0);
+		sbi_console_puts("\ntest ");
+		sbi_console_putnum(x,1);
+		sbi_console_puts("W");
+		sbi_console_puts(" pass\n");
+	}else if (op == MEM_EXEC){
+		addr += FOO_FN_OFFSET;
+		exec_mem(addr);
+		sbi_console_puts("test ");
+		sbi_console_putnum(x,1);
+		sbi_console_puts("X");
+		sbi_console_puts(" pass\n");
+	}
+}
+void MML_Positive(){
+	// MML = 1 positive
+	// M mode
+	TESTMR(0);
+	TESTMR(2);
+	TESTMR(4);
+	TESTMR(6);
+
+	TESTMW(0);
+	TESTMW(6);
+
+	// TESTMX(0); Not support & definitely pass
+	TESTMX(4);
+	TESTMX(10);
+
+	// S mode 
+	TESTSR(1);
+	TESTSR(3);
+	TESTSR(5);
+	TESTSR(7);
+
+	TESTSW(1);
+	TESTSW(7);
+
+	TESTSX(1); 
+	TESTSX(5);
+	TESTSX(11);
+
+	// Shared Region
+	TESTMR(14);
+	TESTMX(14);
+	TESTMX(12);
+	TESTSX(12);
+	TESTSX(14);
+
+	TESTSR(13);
+	TESTSR(15);
+	TESTSW(15);
+	TESTMR(13);
+	TESTMR(15);
+	TESTMW(13);
+	TESTMW(15);
+}
+/**
+ * PMP_NO MAP
+ * 		MML = 0	MML = 1
+ * R--		3		2	
+ * R--		5		4
+ * RW-		7		6
+ * RWX		1		0
+ * ---		9		8
+ * --X		b		a
+ * -W-		d		c
+ * -WX		f		e
+ * 
+ */
+int test_main(){
+	if(!check_no_exception()){
+		return 0;
+	}
+	MML_Positive();
 	return 0;
 }

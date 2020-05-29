@@ -14,7 +14,9 @@ void exec_mem(unsigned long addr){
     ((void(*)())addr)();
  	sbi_printf("\nend exec\n");
 }
-
+void foo(){
+    sbi_printf("M mode exec foo %lx", (unsigned long)&foo);
+}
 void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val){
     switch (op)
     {
@@ -26,6 +28,9 @@ void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val){
         break;
     case MEM_EXEC:
         exec_mem(addr);
+        break;
+    case EXEC_FOO:
+        foo();
         break;
     default:
         break;

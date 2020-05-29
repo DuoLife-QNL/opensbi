@@ -4,7 +4,8 @@
 enum {
     MEM_READ,
     MEM_WRITE,
-    MEM_EXEC
+    MEM_EXEC,
+    EXEC_FOO
 };
 void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val);
 
