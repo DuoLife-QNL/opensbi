@@ -77,7 +77,7 @@ void test_m(int x, unsigned op){
 		 + (op == MEM_EXEC) * FOO_FN_OFFSET;
 	sbi_mem_test(op, addr, 0);
 	sbi_console_puts("test ");
-	sbi_console_putnum(x,1);
+	sbi_console_putnum(x,(x >> 4)+1);
 	if (op == MEM_READ){
 		sbi_console_puts("R");
 	}else if (op == MEM_WRITE){
@@ -94,14 +94,14 @@ void test_s(int x, unsigned op){
 		sbi_console_puts("ret value:");
 		sbi_console_putnum(r, 8);
 		sbi_console_puts("\ntest ");
-		sbi_console_putnum(x,1);
+		sbi_console_putnum(x,(x >> 4)+1);
 		sbi_console_puts("R");
 		sbi_console_puts(" pass\n");
 	}else if (op == MEM_WRITE){
 		addr += 0xffff8UL;
 		write_mem(addr, 0);
 		sbi_console_puts("\ntest ");
-		sbi_console_putnum(x,1);
+		sbi_console_putnum(x,(x >> 4)+1);
 		sbi_console_puts("W");
 		sbi_console_puts(" pass\n");
 	}else if (op == MEM_EXEC){
@@ -196,6 +196,105 @@ void MML_Neg_M(){
 	// Usage: ./mtest_start.sh
 	test_m(TEST_NO, TEST_OP);
 }
+void MML0_Pos(){
+	// MML = 0
+	if(check_exception()){
+		return;
+	}
+	// L = 0 S mode 
+	TESTSR(1);
+	TESTSR(3);
+	TESTSR(5);
+	TESTSR(7);
+
+	TESTSW(1);
+	TESTSW(7);
+
+	TESTSX(1); 
+	TESTSX(5);
+	TESTSX(11);
+//  M mode ignore allow RWX
+	TESTMR(1);
+	TESTMR(3);
+	TESTMR(5);
+	TESTMR(7);
+	TESTMR(9);
+	TESTMR(11);
+
+	TESTMW(1);
+	TESTMW(3);
+	TESTMW(5);
+	TESTMW(7);
+	TESTMW(9);
+	TESTMW(11);
+
+	TESTMX(1); 
+	TESTMX(3);
+	TESTMX(5);
+	TESTMX(7); 
+	TESTMX(9);
+	TESTMX(11);
+	// L = 1 S mode
+	TESTSR(0);
+	TESTSR(2);
+	TESTSR(4);
+	TESTSR(6);
+
+	TESTSW(0);
+	TESTSW(6);
+
+	TESTSX(0); 
+	TESTSX(4);
+	TESTSX(10);
+	// M mode
+	TESTMR(0);
+	TESTMR(2);
+	TESTMR(4);
+	TESTMR(6);
+
+	TESTMW(0);
+	TESTMW(6);
+
+	TESTMX(0); 
+	TESTMX(4);
+	TESTMX(10);
+}
+void MMWP_Neg_S(){
+	// MMWP = 1
+	// 7ff00000 —— UnMatched addr 
+	// Step: To test MMWP, remove PMP15 in opensbi to ensure system
+	// has enough privs to set up
+
+	// If you find step above necessary, MMWP_Neg_M() passes.
+	
+	switch (check_exception())
+	{
+	case 0:
+	NEGSR(-2);
+	NEGSW(-2);
+	NEGSX(-2);
+	default:
+		break;
+	}
+	sbi_console_puts("if NO case passes, NEG test passes");
+	
+	return ;
+}
+void MMWP0_MML0_Pos_M(){
+	// MMWP = 0 MML = 0
+	TESTMR(16);
+	TESTMW(16);
+	TESTMX(16);
+}
+void MMWP0_MML_Pos_M(){
+	// MMWP = 0 MML = 1 RW
+	TESTMR(16);
+	TESTMW(16);
+}
+void MMWP0_MML_Neg_M(){
+	// MMWP = 0 MML = 1 
+	TESTMX(16);
+}
 /**
  * PMP_NO MAP
  * 		MML = 0	MML = 1
@@ -210,6 +309,19 @@ void MML_Neg_M(){
  * 
  */
 int test_main(){
-	MML_Neg_S();
+	// MML0_Pos();
+	/* To test MML, set MML in opensbi first */
+	// MML_Pos();
+	// MML_Neg_S();
+	/* Use shell script to test in batch */
+	// MML_Neg_M();
+
+	// MMWP_Neg_S();
+	// MMWP0_MML0_Pos_M();
+	// MMWP0_MML_Pos_M();
+	// MMWP0_MML_Neg_M();
+	
+	
+
 	return 0;
 }

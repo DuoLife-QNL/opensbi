@@ -32,5 +32,6 @@
 ./mtest.sh 12 0
 ./mtest.sh 12 1
 ./mtest.sh 14 1
+rm trace*
 echo 'if NO case passes(QEMU stops at the end), NEG test passes'
 

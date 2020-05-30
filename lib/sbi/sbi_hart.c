@@ -233,7 +233,8 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 		return 0;
 
 	/* Firmware PMP region to protect OpenSBI firmware */
-	fw_size_log2 = log2roundup(scratch->fw_size);
+	// fw_size_log2 = log2roundup(scratch->fw_size);
+	fw_size_log2 = 20;
 	fw_start = scratch->fw_start & ~((1UL << fw_size_log2) - 1UL);
 	//pmp_set(pmp_idx++, 0, fw_start, fw_size_log2);
 
@@ -242,8 +243,11 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	 * 	  return
 	 * }
 	*/
-	for (int i = 1; i < 16;i++ ){
+	for (int i = 0; i <= 16;i++ ){
 		unsigned long addr = 0x80100000 + 0x00100000 * i + 0x000fff00;
+		if (!i){
+			addr = 0x800fff00;
+		}
 		cpy_code(addr);
 	}
 
@@ -274,6 +278,7 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | PMP_L, 0x80d00000, 20);
 	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | 0	, 0x80e00000, 20);
 	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | PMP_L, 0x80f00000, 20);
+	// To test MMWP = 1this PMP can be delete
 	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | 0	, 0x81000000, 20);
 
 	/*
