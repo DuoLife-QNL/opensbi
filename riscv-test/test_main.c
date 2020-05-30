@@ -58,8 +58,7 @@ void test_2(){
 }
 void test_3(){
 	// exec mem
-	unsigned long addr = &foo;
-    exec_mem(&foo);
+    exec_mem((unsigned long)foo);
 	return;
 }
 void test_4(){
@@ -310,18 +309,24 @@ void MMWP0_MML_Neg_M(){
  */
 int test_main(){
 	// MML0_Pos();
+	
+	// MMWP0_MML0_Pos_M();
 	/* To test MML, set MML in opensbi first */
+	// MMWP0_MML_Pos_M();
+	/* QEMU will exit if this case passes */
+	// MMWP0_MML_Neg_M();
+	
 	// MML_Pos();
 	// MML_Neg_S();
 	/* Use shell script to test in batch */
 	// MML_Neg_M();
 
-	// MMWP_Neg_S();
-	// MMWP0_MML0_Pos_M();
-	// MMWP0_MML_Pos_M();
-	// MMWP0_MML_Neg_M();
-	
-	
+	/* set MMWP in opensbi and follow the step*/
+	/* Step: To test MMWP, remove PMP15 in opensbi 
+	 * to ensure system has enough privs to set up
+	 */
+	// MMWP_Neg_S(); 
+	sbi_console_puts("All tests pass");
 
 	return 0;
 }

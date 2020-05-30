@@ -89,10 +89,8 @@ void exec_mem(unsigned long addr){
     sbi_console_puts("S/U mode start exec:");
     sbi_console_putnum(addr, 8);
     sbi_console_putchar('\n');
-    int(*p)();
-    p = addr;
-    p();
-        sbi_console_puts("end exec\n");
+    ((void(*)())addr)();
+    sbi_console_puts("end exec\n");
 }
 
 

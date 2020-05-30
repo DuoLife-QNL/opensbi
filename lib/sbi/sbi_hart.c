@@ -278,7 +278,7 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | PMP_L, 0x80d00000, 20);
 	pmp_set(pmp_idx++, 0	 | 0	 | PMP_W | 0	, 0x80e00000, 20);
 	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | PMP_L, 0x80f00000, 20);
-	// To test MMWP = 1this PMP can be delete
+	// To test MMWP = 1 the following PMP should be delete
 	pmp_set(pmp_idx++, 0	 | PMP_X | PMP_W | 0	, 0x81000000, 20);
 
 	/*
