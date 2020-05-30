@@ -18,6 +18,7 @@
 #include <sbi/sbi_misaligned_ldst.h>
 #include <sbi/sbi_timer.h>
 #include <sbi/sbi_trap.h>
+#include <sbi/sbi_system.h>
 
 static void __noreturn sbi_trap_error(const char *msg, int rc,
 				      ulong mcause, ulong mtval, ulong mtval2,
@@ -67,7 +68,7 @@ static void __noreturn sbi_trap_error(const char *msg, int rc,
 		   hartid, "t4", regs->t4, "t5", regs->t5);
 	sbi_printf("%s: hart%d: %s=0x%" PRILX "\n", __func__, hartid, "t6",
 		   regs->t6);
-
+	sbi_system_reset(0);
 	sbi_hart_hang();
 }
 

@@ -2,8 +2,8 @@
 #define SBI_EXT_0_1_MEM_TEST 0x9
 typedef unsigned long           uintptr_t;
 struct sbiret {
-        long error;
-        long value;
+	long error;
+	long value;
 };
 
 struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
@@ -11,24 +11,24 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
                         unsigned long arg3, unsigned long arg4,
                         unsigned long arg5)
 {
-        struct sbiret ret;
+	struct sbiret ret;
 
-        register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);
-        register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);
-        register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);
-        register uintptr_t a3 asm ("a3") = (uintptr_t)(arg3);
-        register uintptr_t a4 asm ("a4") = (uintptr_t)(arg4);
-        register uintptr_t a5 asm ("a5") = (uintptr_t)(arg5);
-        register uintptr_t a6 asm ("a6") = (uintptr_t)(fid);
-        register uintptr_t a7 asm ("a7") = (uintptr_t)(ext);
-        asm volatile ("ecall"
-                      : "+r" (a0), "+r" (a1)
-                      : "r" (a2), "r" (a3), "r" (a4), "r" (a5), "r" (a6), "r" (a7)
-                      : "memory");
-        ret.error = a0;
-        ret.value = a1;
+	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);
+	register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);
+	register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);
+	register uintptr_t a3 asm ("a3") = (uintptr_t)(arg3);
+	register uintptr_t a4 asm ("a4") = (uintptr_t)(arg4);
+	register uintptr_t a5 asm ("a5") = (uintptr_t)(arg5);
+	register uintptr_t a6 asm ("a6") = (uintptr_t)(fid);
+	register uintptr_t a7 asm ("a7") = (uintptr_t)(ext);
+	asm volatile ("ecall"
+					: "+r" (a0), "+r" (a1)
+					: "r" (a2), "r" (a3), "r" (a4), "r" (a5), "r" (a6), "r" (a7)
+					: "memory");
+	ret.error = a0;
+	ret.value = a1;
 
-        return ret;
+	return ret;
 }
 void sbi_console_putchar(int ch)
 {
@@ -77,17 +77,17 @@ unsigned long read_mem(unsigned long addr){
         return *(unsigned long *)addr;
 }
 void write_mem(unsigned long addr, unsigned long val){
-        sbi_console_puts("S/U mode write mem @");
-    sbi_console_putnum(addr, 8);
-        sbi_console_puts(" with value ");
-    sbi_console_putnum(val, 8);
-        sbi_console_putchar('\n');
-        *(unsigned long *)addr = val;
-        sbi_console_puts("end write");
+	sbi_console_puts("S/U mode write mem @");
+	sbi_console_putnum(addr, 8);
+	sbi_console_puts(" with value ");
+	sbi_console_putnum(val, 8);
+	sbi_console_putchar('\n');
+	*(unsigned long *)addr = val;
+	sbi_console_puts("end write");
 }
 void exec_mem(unsigned long addr){
-        sbi_console_puts("S/U mode start exec:");
-        sbi_console_putnum(addr, 8);
+    sbi_console_puts("S/U mode start exec:");
+    sbi_console_putnum(addr, 8);
     sbi_console_putchar('\n');
     int(*p)();
     p = addr;
@@ -97,26 +97,26 @@ void exec_mem(unsigned long addr){
 
 
 #define wfi()                                             \
-        do {                                              \
-                __asm__ __volatile__("wfi" ::: "memory"); \
-        } while (0)
+	do {                                              \
+			__asm__ __volatile__("wfi" ::: "memory"); \
+	} while (0)
 void sbi_mem_test(unsigned op, unsigned long addr, unsigned long val)
 {
-        sbi_ecall(9, 0, op, addr, val, 0, 0, 0);
+	sbi_ecall(9, 0, op, addr, val, 0, 0, 0);
 }
-int check_no_exception(){
-        unsigned long r = read_csr(0x143);
-        if (r == 0){
-                sbi_console_puts("no exception: stvl:");
-        }else{
-                sbi_console_puts("exception detected!\n");
-        }
-        sbi_console_putnum(r, 8);
-        sbi_console_putchar('\n');
-        return r == 0;
+unsigned long check_exception(){
+	unsigned long r = read_csr(0x143);
+	if (r){
+			sbi_console_puts("exception detected! stvl\n");
+	}else{
+			sbi_console_puts("no exception: stvl:");
+	}
+	sbi_console_putnum(r, 8);
+	sbi_console_putchar('\n');
+	return r;
 }
 void foo(){
-        sbi_console_puts("ex:foo\n");
+	sbi_console_puts("ex:foo\n");
 }
 
 

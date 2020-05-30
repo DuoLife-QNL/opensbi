@@ -5,7 +5,13 @@
 #define MEM_EXEC  		2
 #define EXEC_FOO  		3
 
+#define PMP_ADDR(x)	BASE_ADDR + 0x100000 * (x + (x!=0))
+#define PMP_R(x) PMP_ADDR(x)
+#define PMP_W(x) PMP_ADDR(x) + 0xffff8UL
+#define PMP_X(x) PMP_ADDR(x) + FOO_FN_OFFSET
+
 #include "test_main.h"
+#include "mtest_no.h"
 #define TEST(x) test_##x()
 #define TESTMR(x) test_m(x,MEM_READ)
 #define TESTMW(x) test_m(x,MEM_WRITE)
@@ -13,16 +19,24 @@
 #define TESTSR(x) test_s(x,MEM_READ)
 #define TESTSW(x) test_s(x,MEM_WRITE)
 #define TESTSX(x) test_s(x,MEM_EXEC)
+
+#define NEGSR(x) TESTSR(x); break; case PMP_R(x):
+#define NEGSW(x) TESTSW(x); break; case PMP_W(x):
+#define NEGSX(x) TESTSX(x); break; case PMP_X(x):
+#define NEGMR(x) TESTMR(x); break; case PMP_R(x):
+#define NEGMW(x) TESTMW(x); break; case PMP_W(x):
+#define NEGMX(x) TESTMX(x); break; case PMP_X(x):
+
 void test_csr(){
 	// csr R/W
 	unsigned long a = read_csr(0x100);
 
-        sbi_console_putnum(a, 4);
-        sbi_console_putchar('\n');
-        a |= 0x7;
-        write_csr(0x100, a);
-        a = read_csr(0x100);
-        sbi_console_putnum(a, 8);
+	sbi_console_putnum(a, 4);
+	sbi_console_putchar('\n');
+	a |= 0x7;
+	write_csr(0x100, a);
+	a = read_csr(0x100);
+	sbi_console_putnum(a, 8);
 	sbi_console_puts("\ntest1 pass\n");
 	return ;
 }
@@ -37,7 +51,7 @@ void test_2(){
 	// mem R/W
 	unsigned long value = 0x00012345;
 	write_mem(0x80300000, value);
-    	sbi_console_putnum(read_mem(0x80300000), 8);
+	sbi_console_putnum(read_mem(0x80300000), 8);
 	
 	sbi_console_puts("\ntest2 pass\n");
 	return;
@@ -58,7 +72,7 @@ void test_4(){
 	sbi_console_putnum(read_mem(0x80800000),8);
 }
 void test_m(int x, unsigned op){
-	unsigned long addr = BASE_ADDR + 0x100000 * (x + (x!=0));
+	unsigned long addr = PMP_ADDR(x);
 	addr += (op == MEM_WRITE) * 0x1fff8UL 
 		 + (op == MEM_EXEC) * FOO_FN_OFFSET;
 	sbi_mem_test(op, addr, 0);
@@ -74,7 +88,7 @@ void test_m(int x, unsigned op){
 	sbi_console_puts(" pass\n");
 }
 void test_s(int x, unsigned op){
-	unsigned long addr = BASE_ADDR + 0x100000 * (x + (x!=0));
+	unsigned long addr = PMP_ADDR(x);
 	if (op == MEM_READ){
 		unsigned long r = read_mem(addr);
 		sbi_console_puts("ret value:");
@@ -99,7 +113,10 @@ void test_s(int x, unsigned op){
 		sbi_console_puts(" pass\n");
 	}
 }
-void MML_Positive(){
+void MML_Pos(){
+	if(check_exception()){
+		return;
+	}
 	// MML = 1 positive
 	// M mode
 	TESTMR(0);
@@ -142,6 +159,43 @@ void MML_Positive(){
 	TESTMW(13);
 	TESTMW(15);
 }
+void MML_Neg_S(){
+	switch (check_exception())
+	{
+	case 0:
+	// L = 1 S/U
+	NEGSR(0)
+	NEGSW(0)
+	NEGSX(0)
+	NEGSR(2)
+	NEGSW(2)
+	NEGSX(2)
+	NEGSR(4)
+	NEGSW(4)
+	NEGSX(4)
+	NEGSR(6)
+	NEGSW(6)
+	NEGSX(6)
+	NEGSR(8)
+	NEGSW(8)
+	NEGSX(8)
+	NEGSR(10)
+	NEGSW(10)
+	NEGSX(10)
+	NEGSR(12)
+	NEGSW(12)
+	NEGSR(14)
+	NEGSW(14)
+	
+	default:
+		break;
+	}
+	sbi_console_puts("if NO case passes, NEG test passes");
+}
+void MML_Neg_M(){
+	// Usage: ./mtest_start.sh
+	test_m(TEST_NO, TEST_OP);
+}
 /**
  * PMP_NO MAP
  * 		MML = 0	MML = 1
@@ -156,9 +210,6 @@ void MML_Positive(){
  * 
  */
 int test_main(){
-	if(!check_no_exception()){
-		return 0;
-	}
-	MML_Positive();
+	MML_Neg_S();
 	return 0;
 }

@@ -6,7 +6,7 @@ LD	:= riscv64-unknown-elf-ld -T llinker.ld
 AS	:= riscv64-unknown-elf-as
 objcopy := riscv64-unknown-elf-objcopy
 
-test_main.o : test_main.c
+test_main.o : test_main.c test_main.h mtest_no.h
 	$(CC) -c test_main.c -o test_main.o
 
 entry.o	: entry.asm
