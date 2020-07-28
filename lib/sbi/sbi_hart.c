@@ -49,7 +49,7 @@ static void mstatus_init(struct sbi_scratch *scratch, u32 hartid)
 	if (misa_extension('S') &&
 	    sbi_hart_has_feature(scratch, SBI_HART_HAS_SCOUNTEREN))
 		csr_write(CSR_SCOUNTEREN, -1);
-	if (!sbi_hart_has_feature(scratch, SBI_HART_HAS_MCOUNTEREN))
+	if (sbi_hart_has_feature(scratch, SBI_HART_HAS_MCOUNTEREN))
 		csr_write(CSR_MCOUNTEREN, -1);
 
 	/* Disable all interrupts */
@@ -110,6 +110,7 @@ static int delegate_traps(struct sbi_scratch *scratch, u32 hartid)
 		exceptions |= (1U << CAUSE_SUPERVISOR_ECALL);
 		exceptions |= (1U << CAUSE_FETCH_GUEST_PAGE_FAULT);
 		exceptions |= (1U << CAUSE_LOAD_GUEST_PAGE_FAULT);
+		exceptions |= (1U << CAUSE_VIRTUAL_INST_FAULT);
 		exceptions |= (1U << CAUSE_STORE_GUEST_PAGE_FAULT);
 	}
 
@@ -121,6 +122,10 @@ static int delegate_traps(struct sbi_scratch *scratch, u32 hartid)
 
 void sbi_hart_delegation_dump(struct sbi_scratch *scratch)
 {
+	if (!misa_extension('S'))
+		/* No delegation possible as mideleg does not exist*/
+		return;
+
 #if __riscv_xlen == 32
 	sbi_printf("MIDELEG : 0x%08lx\n", csr_read(CSR_MIDELEG));
 	sbi_printf("MEDELEG : 0x%08lx\n", csr_read(CSR_MEDELEG));
@@ -206,7 +211,7 @@ int sbi_hart_pmp_check_addr(struct sbi_scratch *scratch, unsigned long addr,
 			continue;
 		if (tempaddr <= addr && addr <= tempaddr + size)
 			if (!(prot & attr))
-				return SBI_INVALID_ADDR;
+				return SBI_EINVALID_ADDR;
 	}
 
 	return SBI_OK;

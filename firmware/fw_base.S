@@ -177,6 +177,20 @@ _bss_zero:
 	li	s5, (SBI_SCRATCH_SIZE * 2)
 	add	sp, s4, s5
 
+	/* Allow main firmware to save info */
+	MOV_5R	s0, a0, s1, a1, s2, a2, s3, a3, s4, a4
+	call	fw_save_info
+	MOV_5R	a0, s0, a1, s1, a2, s2, a3, s3, a4, s4
+
+	/* Override previous arg1 */
+	MOV_3R	s0, a0, s1, a1, s2, a2
+	call	fw_prev_arg1
+	add	t1, a0, zero
+	MOV_3R	a0, s0, a1, s1, a2, s2
+	beqz	t1, _prev_arg1_override_done
+	add	a1, t1, zero
+_prev_arg1_override_done:
+
 	/*
 	 * Initialize platform
 	 * Note: The a0 to a4 registers passed to the
@@ -184,12 +198,9 @@ _bss_zero:
 	 */
 	MOV_5R	s0, a0, s1, a1, s2, a2, s3, a3, s4, a4
 	call	fw_platform_init
+	add	t0, a0, zero
 	MOV_5R	a0, s0, a1, s1, a2, s2, a3, s3, a4, s4
-
-	/* Allow main firmware to save info */
-	MOV_5R	s0, a0, s1, a1, s2, a2, s3, a3, s4, a4
-	call	fw_save_info
-	MOV_5R	a0, s0, a1, s1, a2, s2, a3, s3, a4, s4
+	add	a1, t0, zero
 
 	/* Preload HART details
 	 * s7 -> HART Count
@@ -259,26 +270,15 @@ _scratch_init:
 	/* Store firmware options in scratch space */
 	MOV_3R	s0, a0, s1, a1, s2, a2
 #ifdef FW_OPTIONS
-	li	a4, FW_OPTIONS
+	li	a0, FW_OPTIONS
 #else
-	add	a4, zero, zero
-#endif
 	call	fw_options
-	or	a4, a4, a0
-	REG_S	a4, SBI_SCRATCH_OPTIONS_OFFSET(tp)
+#endif
+	REG_S	a0, SBI_SCRATCH_OPTIONS_OFFSET(tp)
 	MOV_3R	a0, s0, a1, s1, a2, s2
 	/* Move to next scratch space */
 	add	t1, t1, t2
 	blt	t1, s7, _scratch_init
-
-	/* Override previous arg1 */
-	MOV_3R	s0, a0, s1, a1, s2, a2
-	call	fw_prev_arg1
-	add	t1, a0, zero
-	MOV_3R	a0, s0, a1, s1, a2, s2
-	beqz	t1, _prev_arg1_override_done
-	add	a1, t1, zero
-_prev_arg1_override_done:
 
 	/*
 	 * Relocate Flatened Device Tree (FDT)
@@ -477,6 +477,7 @@ _start_hang:
 	.globl fw_platform_init
 	.weak fw_platform_init
 fw_platform_init:
+	add	a0, a1, zero
 	ret
 
 	.section .entry, "ax", %progbits

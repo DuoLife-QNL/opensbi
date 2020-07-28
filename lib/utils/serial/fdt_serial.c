@@ -15,11 +15,13 @@
 extern struct fdt_serial fdt_serial_uart8250;
 extern struct fdt_serial fdt_serial_sifive;
 extern struct fdt_serial fdt_serial_htif;
+extern struct fdt_serial fdt_serial_shakti;
 
 static struct fdt_serial *serial_drivers[] = {
 	&fdt_serial_uart8250,
 	&fdt_serial_sifive,
 	&fdt_serial_htif,
+	&fdt_serial_shakti,
 };
 
 static void dummy_putc(char ch)
@@ -91,7 +93,7 @@ int fdt_serial_init(void)
 	for (pos = 0; pos < array_size(serial_drivers); pos++) {
 		drv = serial_drivers[pos];
 
-		noff = fdt_find_match(fdt, drv->match_table, &match);
+		noff = fdt_find_match(fdt, -1, drv->match_table, &match);
 		if (noff < 0)
 			continue;
 

@@ -7,27 +7,33 @@
  *   Anup Patel <anup.patel@wdc.com>
  */
 
+#include <sbi/sbi_error.h>
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/timer/fdt_timer.h>
 #include <sbi_utils/sys/clint.h>
+
+#define CLINT_TIMER_MAX_NR			16
+
+static unsigned long clint_timer_count = 0;
+static struct clint_data clint_timer[CLINT_TIMER_MAX_NR];
 
 static int timer_clint_cold_init(void *fdt, int nodeoff,
 				  const struct fdt_match *match)
 {
 	int rc;
-	u32 max_hartid;
-	unsigned long addr;
+	struct clint_data *ct, *ctmaster = NULL;
 
-	rc = fdt_parse_max_hart_id(fdt, &max_hartid);
+	if (CLINT_TIMER_MAX_NR <= clint_timer_count)
+		return SBI_ENOSPC;
+	ct = &clint_timer[clint_timer_count++];
+	if (1 < clint_timer_count)
+		ctmaster = &clint_timer[0];
+
+	rc = fdt_parse_clint_node(fdt, nodeoff, TRUE, ct);
 	if (rc)
 		return rc;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, &addr, NULL);
-	if (rc)
-		return rc;
-
-	/* TODO: We should figure-out CLINT has_64bit_mmio from DT node */
-	return clint_cold_timer_init(addr, max_hartid + 1, TRUE);
+	return clint_cold_timer_init(ct, ctmaster);
 }
 
 static const struct fdt_match timer_clint_match[] = {

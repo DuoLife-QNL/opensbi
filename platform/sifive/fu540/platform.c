@@ -46,11 +46,30 @@
 
 /* clang-format on */
 
+static struct plic_data plic = {
+	.addr = FU540_PLIC_ADDR,
+	.num_src = FU540_PLIC_NUM_SOURCES,
+};
+
+static struct clint_data clint = {
+	.addr = FU540_CLINT_ADDR,
+	.first_hartid = 0,
+	.hart_count = FU540_HART_COUNT,
+	.has_64bit_mmio = TRUE,
+};
+
 static void fu540_modify_dt(void *fdt)
 {
 	fdt_cpu_fixup(fdt);
 
 	fdt_fixups(fdt);
+
+	/*
+	 * SiFive Freedom U540 has an erratum that prevents S-mode software
+	 * to access a PMP protected region using 1GB page table mapping, so
+	 * always add the no-map attribute on this platform.
+	 */
+	fdt_reserved_memory_nomap_fixup(fdt);
 }
 
 static int fu540_final_init(bool cold_boot)
@@ -88,14 +107,12 @@ static int fu540_irqchip_init(bool cold_boot)
 	u32 hartid = current_hartid();
 
 	if (cold_boot) {
-		rc = plic_cold_irqchip_init(FU540_PLIC_ADDR,
-					    FU540_PLIC_NUM_SOURCES,
-					    FU540_HART_COUNT);
+		rc = plic_cold_irqchip_init(&plic);
 		if (rc)
 			return rc;
 	}
 
-	return plic_warm_irqchip_init(hartid, (hartid) ? (2 * hartid - 1) : 0,
+	return plic_warm_irqchip_init(&plic, (hartid) ? (2 * hartid - 1) : 0,
 				      (hartid) ? (2 * hartid) : -1);
 }
 
@@ -104,7 +121,7 @@ static int fu540_ipi_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_ipi_init(FU540_CLINT_ADDR, FU540_HART_COUNT);
+		rc = clint_cold_ipi_init(&clint);
 		if (rc)
 			return rc;
 	}
@@ -122,8 +139,7 @@ static int fu540_timer_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_timer_init(FU540_CLINT_ADDR,
-					   FU540_HART_COUNT, TRUE);
+		rc = clint_cold_timer_init(&clint, NULL);
 		if (rc)
 			return rc;
 	}

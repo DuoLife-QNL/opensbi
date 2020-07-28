@@ -23,11 +23,12 @@
 /* clang-format off */
 
 #define UX600_HART_COUNT		1
-
-#define UX600_SYS_CLK			1000000000
+#define UX600_TIMER_FREQ		32768
 
 /* Nuclei timer base address */
 #define UX600_NUCLEI_TIMER_ADDR		0x2000000
+#define UX600_NUCLEI_TIMER_MSFTRST_OFS	0xFF0
+#define UX600_NUCLEI_TIMER_MSFTRST_KEY	0x80000A5F
 /* The clint compatiable timer offset is 0x1000 against nuclei timer */
 #define UX600_CLINT_TIMER_ADDR		(UX600_NUCLEI_TIMER_ADDR + 0x1000)
 
@@ -39,9 +40,86 @@
 #define UX600_UART1_ADDR		0x10023000
 
 #define UX600_DEBUG_UART		UX600_UART0_ADDR
-#define UX600_UART_BAUDRATE		115200
+
+#ifndef UX600_UART_BAUDRATE
+#define UX600_UART_BAUDRATE		57600
+#endif
+
+#define UX600_GPIO_ADDR			0x10012000
+#define UX600_GPIO_IOF_EN_OFS		0x38
+#define UX600_GPIO_IOF_SEL_OFS		0x3C
+#define UX600_GPIO_IOF_UART0_MASK	0x00030000
+
+#define UX600_TIMER_VALUE()		readl((void *)UX600_NUCLEI_TIMER_ADDR)
 
 /* clang-format on */
+static u32 ux600_clk_freq = 8000000;
+
+static struct plic_data plic = {
+	.addr = UX600_PLIC_ADDR,
+	.num_src = UX600_PLIC_NUM_SOURCES,
+};
+
+static struct clint_data clint = {
+	.addr = UX600_CLINT_TIMER_ADDR,
+	.first_hartid = 0,
+	.hart_count = UX600_HART_COUNT,
+	.has_64bit_mmio = TRUE,
+};
+static u32 measure_cpu_freq(u32 n)
+{
+	u32 start_mtime, delta_mtime;
+	u32 mtime_freq = UX600_TIMER_FREQ;
+	u32 tmp = (u32)UX600_TIMER_VALUE();
+	u32 start_mcycle, delta_mcycle, freq;
+
+	/* Don't start measuring until we see an mtime tick */
+	do {
+		start_mtime = (u32)UX600_TIMER_VALUE();
+	} while (start_mtime == tmp);
+
+	start_mcycle = csr_read(mcycle);
+
+	do {
+		delta_mtime = (u32)UX600_TIMER_VALUE() - start_mtime;
+	} while (delta_mtime < n);
+
+	delta_mcycle = csr_read(mcycle) - start_mcycle;
+
+	freq = (delta_mcycle / delta_mtime) * mtime_freq
+		+ ((delta_mcycle % delta_mtime) * mtime_freq) / delta_mtime;
+
+	return freq;
+}
+
+static u32 ux600_get_clk_freq(void)
+{
+	u32 cpu_freq;
+
+	/* warm up */
+	measure_cpu_freq(1);
+	/* measure for real */
+	cpu_freq = measure_cpu_freq(100);
+
+	return cpu_freq;
+}
+
+static int ux600_early_init(bool cold_boot)
+{
+	u32 regval;
+
+	/* Measure CPU Frequency using Timer */
+	ux600_clk_freq = ux600_get_clk_freq();
+
+	/* Init GPIO UART pinmux */
+	regval = readl((void *)(UX600_GPIO_ADDR + UX600_GPIO_IOF_SEL_OFS)) &
+		 ~UX600_GPIO_IOF_UART0_MASK;
+	writel(regval, (void *)(UX600_GPIO_ADDR + UX600_GPIO_IOF_SEL_OFS));
+	regval = readl((void *)(UX600_GPIO_ADDR + UX600_GPIO_IOF_EN_OFS)) |
+		UX600_GPIO_IOF_UART0_MASK;
+	writel(regval, (void *)(UX600_GPIO_ADDR + UX600_GPIO_IOF_EN_OFS));
+	return 0;
+}
 
 static void ux600_modify_dt(void *fdt)
 {
@@ -63,7 +141,7 @@ static int ux600_final_init(bool cold_boot)
 
 static int ux600_console_init(void)
 {
-	return sifive_uart_init(UX600_DEBUG_UART, UX600_SYS_CLK,
+	return sifive_uart_init(UX600_DEBUG_UART, ux600_clk_freq,
 				UX600_UART_BAUDRATE);
 }
 
@@ -73,14 +151,12 @@ static int ux600_irqchip_init(bool cold_boot)
 	u32 hartid = current_hartid();
 
 	if (cold_boot) {
-		rc = plic_cold_irqchip_init(UX600_PLIC_ADDR,
-					    UX600_PLIC_NUM_SOURCES,
-					    UX600_HART_COUNT);
+		rc = plic_cold_irqchip_init(&plic);
 		if (rc)
 			return rc;
 	}
 
-	return plic_warm_irqchip_init(hartid, (hartid) ? (2 * hartid - 1) : 0,
+	return plic_warm_irqchip_init(&plic, (hartid) ? (2 * hartid - 1) : 0,
 				      (hartid) ? (2 * hartid) : -1);
 }
 
@@ -89,7 +165,7 @@ static int ux600_ipi_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_ipi_init(UX600_CLINT_TIMER_ADDR, UX600_HART_COUNT);
+		rc = clint_cold_ipi_init(&clint);
 		if (rc)
 			return rc;
 	}
@@ -102,8 +178,7 @@ static int ux600_timer_init(bool cold_boot)
 	int rc;
 
 	if (cold_boot) {
-		rc = clint_cold_timer_init(UX600_CLINT_TIMER_ADDR,
-					   UX600_HART_COUNT, TRUE);
+		rc = clint_cold_timer_init(&clint, NULL);
 		if (rc)
 			return rc;
 	}
@@ -113,11 +188,15 @@ static int ux600_timer_init(bool cold_boot)
 
 static int ux600_system_reset(u32 type)
 {
-	/* For now nothing to do. */
+	/* Reset system using MSFTRST register in Nuclei Timer. */
+	writel(UX600_NUCLEI_TIMER_MSFTRST_KEY, (void *)(UX600_NUCLEI_TIMER_ADDR
+					+ UX600_NUCLEI_TIMER_MSFTRST_OFS));
+	while(1);
 	return 0;
 }
 
 const struct sbi_platform_operations platform_ops = {
+	.early_init		= ux600_early_init,
 	.final_init		= ux600_final_init,
 	.console_putc		= sifive_uart_putc,
 	.console_getc		= sifive_uart_getc,
